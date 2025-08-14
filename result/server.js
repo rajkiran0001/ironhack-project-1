@@ -35,7 +35,7 @@ resultNamespace.on('connection', function (socket) {
 });
 
 // --- Example PostgreSQL logic (adjust as needed) ---
-var pgHost = process.env.PG_HOST || 'db';
+var pgHost = process.env.PG_HOST || 'localhost';
 var pgPort = process.env.PG_PORT || 5432;
 var pgUser = process.env.PG_USER || 'postgres';
 var pgPassword = process.env.PG_PASSWORD || 'postgres';

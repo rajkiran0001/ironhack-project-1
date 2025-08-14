@@ -17,12 +17,12 @@ namespace Worker
             try
             {
                 // Fetch configuration from environment variables
-                var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "db";
+                var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
                 var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "postgres";
                 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "postgres";
                 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "postgres";
                 
-                var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
+                var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
 
                 // Construct the connection strings
                 var pgConnectionString = $"Server={dbHost};Username={dbUsername};Password={dbPassword};Database={dbName}";
@@ -118,33 +118,32 @@ namespace Worker
             return connection;
         }
 
-        private static ConnectionMultiplexer OpenRedisConnection(string hostname)
+ private static ConnectionMultiplexer OpenRedisConnection(string hostname)
+{
+    var redisConnectionString = $"{hostname}:6379";
+    Console.WriteLine($"Connecting to Redis at {redisConnectionString}");
+
+    while (true)
+    {
+        try
         {
-            // Use IP address to workaround https://github.com/StackExchange/StackExchange.Redis/issues/410
-            var ipAddress = GetIp(hostname);
-            Console.WriteLine($"Found redis at {ipAddress}");
-
-            while (true)
-            {
-                try
-                {
-                    Console.Error.WriteLine("Connecting to redis");
-                    return ConnectionMultiplexer.Connect(ipAddress);
-                }
-                catch (RedisConnectionException)
-                {
-                    Console.Error.WriteLine("Waiting for redis");
-                    Thread.Sleep(1000);
-                }
-            }
+            return ConnectionMultiplexer.Connect(redisConnectionString);
         }
+        catch (RedisConnectionException)
+        {
+            Console.Error.WriteLine("Waiting for redis");
+            Thread.Sleep(1000);
+        }
+    }
+}
 
-        private static string GetIp(string hostname)
-            => Dns.GetHostEntryAsync(hostname)
-                .Result
-                .AddressList
-                .First(a => a.AddressFamily == AddressFamily.InterNetwork)
-                .ToString();
+
+        // private static string GetIp(string hostname)
+        //     => Dns.GetHostEntryAsync(hostname)
+        //         .Result
+        //         .AddressList
+        //         .First(a => a.AddressFamily == AddressFamily.InterNetwork)
+        //         .ToString();
 
         private static void UpdateVote(NpgsqlConnection connection, string voterId, string vote)
         {
